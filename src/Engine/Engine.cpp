@@ -394,14 +394,27 @@ void getLines(DocCmpInfo& doc, const CompareOptions& options)
 		newLine.hash = cHashSeed;
 		newLine.line = lineNum + doc.section.off;
 
-		if (lineEnd - lineStart)
+		int lineStartmoved = lineStart;
+		bool endfound = false;
+		while (options.ignoreLineNumbers && !endfound && lineStartmoved < lineEnd - 1) {
+			const std::vector<char> text = getText(doc.view, lineStartmoved, lineStartmoved + 1);
+			if (isdigit(text[0])) {
+				lineStartmoved++;
+			}
+			else
+			{
+				endfound = true;
+			}
+		}
+
+		if (lineEnd - lineStartmoved)
 		{
-			std::vector<char> line = getText(doc.view, lineStart, lineEnd);
+			std::vector<char> line = getText(doc.view, lineStartmoved, lineEnd);
 
 			if (options.ignoreCase)
 				toLowerCase(line);
 
-			for (int i = 0; i < lineEnd - lineStart; ++i)
+			for (int i = 0; i < lineEnd - lineStartmoved; ++i)
 			{
 				if (options.ignoreSpaces && (line[i] == ' ' || line[i] == '\t'))
 					continue;
@@ -1492,16 +1505,27 @@ void markSection(const DocCmpInfo& doc, const diffInfo& bd, const CompareOptions
 	}
 }
 
+bool isNumberFromStartOfLine(const int& viewd, int linePos, int offset) {
+	std::vector<char> text = getText(viewd, linePos, linePos + offset + 1);
+	for each (char digit in text)
+	{
+		if (digit != '\0' && !isdigit(digit))
+			return false;
+	}
+	return true;
+}
 
 void markLineDiffs(const CompareInfo& cmpInfo, const diffInfo& bd, int lineIdx)
 {
+
 	int line = cmpInfo.doc1.lines[bd.off + bd.info.changedLines[lineIdx].line].line;
 	int linePos = getLineStart(cmpInfo.doc1.view, line);
 	int color = (cmpInfo.doc1.blockDiffMask == MARKER_MASK_ADDED) ?
 			Settings.colors.add_highlight : Settings.colors.rem_highlight;
 
 	for (const auto& change: bd.info.changedLines[lineIdx].changes)
-		markTextAsChanged(cmpInfo.doc1.view, linePos + change.off, change.len, color);
+		if (!Settings.ignoreLineNumbers || !isNumberFromStartOfLine(cmpInfo.doc1.view,linePos, change.off))
+			markTextAsChanged(cmpInfo.doc1.view, linePos + change.off, change.len, color);
 
 	CallScintilla(cmpInfo.doc1.view, SCI_MARKERADDSET, line,
 			cmpInfo.doc1.nonUniqueLines.find(line) == cmpInfo.doc1.nonUniqueLines.end() ?
@@ -1513,12 +1537,14 @@ void markLineDiffs(const CompareInfo& cmpInfo, const diffInfo& bd, int lineIdx)
 			Settings.colors.add_highlight : Settings.colors.rem_highlight;
 
 	for (const auto& change: bd.info.matchBlock->info.changedLines[lineIdx].changes)
-		markTextAsChanged(cmpInfo.doc2.view, linePos + change.off, change.len, color);
+		if (!Settings.ignoreLineNumbers || !isNumberFromStartOfLine(cmpInfo.doc2.view, linePos, change.off))
+		    markTextAsChanged(cmpInfo.doc2.view, linePos + change.off, change.len, color);
 
 	CallScintilla(cmpInfo.doc2.view, SCI_MARKERADDSET, line,
 			cmpInfo.doc2.nonUniqueLines.find(line) == cmpInfo.doc2.nonUniqueLines.end() ?
 			MARKER_MASK_CHANGED : MARKER_MASK_CHANGED_LOCAL);
 }
+
 
 
 bool markAllDiffs(CompareInfo& cmpInfo, const CompareOptions& options, CompareSummary& summary)

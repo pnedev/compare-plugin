@@ -40,6 +40,7 @@ const TCHAR UserSettings::followingCaretSetting[]		= TEXT("Following_Caret");
 const TCHAR UserSettings::charPrecisionSetting[]		= TEXT("Character_Level_Highlight");
 const TCHAR UserSettings::diffsBasedChangesSetting[]	= TEXT("Diffs_Based_Line_Changes");
 const TCHAR UserSettings::ignoreSpacesSetting[]			= TEXT("Ignore_Spaces");
+const TCHAR UserSettings::ignoreLineNumbers[]			= TEXT("Ignore_Line_Numbers");
 const TCHAR UserSettings::ignoreEmptyLinesSetting[]		= TEXT("Ignore_Empty_Lines");
 const TCHAR UserSettings::ignoreCaseSetting[]			= TEXT("Ignore_Case");
 const TCHAR UserSettings::detectMovesSetting[]			= TEXT("Detect_Moves");
@@ -101,8 +102,8 @@ void UserSettings::load()
 	ShowOnlyDiffs			= ::GetPrivateProfileInt(mainSection, showOnlyDiffSetting,		0, iniFile) != 0;
 	ShowOnlySelections		= ::GetPrivateProfileInt(mainSection, showOnlySelSetting,		1, iniFile) != 0;
 	UseNavBar				= ::GetPrivateProfileInt(mainSection, navBarSetting,			1, iniFile) != 0;
-
 	RecompareOnChange		= ::GetPrivateProfileInt(mainSection, reCompareOnChangeSetting,	1, iniFile) != 0;
+	IgnoreLineNumbers		= ::GetPrivateProfileInt(mainSection, ignoreLineNumbers,		0, iniFile) != 0;
 
 	SavedStatusType	= static_cast<StatusType>(::GetPrivateProfileInt(mainSection, statusTypeSetting,
 			DEFAULT_STATUS_TYPE, iniFile));
@@ -205,9 +206,10 @@ void UserSettings::save()
 			ShowOnlySelections ? TEXT("1") : TEXT("0"), iniFile);
 	::WritePrivateProfileString(mainSection, navBarSetting,
 			UseNavBar ? TEXT("1") : TEXT("0"), iniFile);
-
 	::WritePrivateProfileString(mainSection, reCompareOnChangeSetting,
 			RecompareOnChange ? TEXT("1") : TEXT("0"), iniFile);
+	::WritePrivateProfileString(mainSection, ignoreLineNumbers,
+		IgnoreLineNumbers ? TEXT("1") : TEXT("0"), iniFile);
 
 	TCHAR buffer[64];
 
